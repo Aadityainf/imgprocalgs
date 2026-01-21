@@ -1,9 +1,42 @@
 import argparse
 import functools
+import os
 from imgprocalgs.algorithms.utilities import Image, create_empty_image, ImageData, get_greyscale
 from imgprocalgs.visualisation.server import App
+from ..base import BaseAlgorithm
+from PIL import Image as PILImage 
 
+class SepiaAlgorithm(BaseAlgorithm):
+    def compute(self):
+        """The core Sepia logic moved into this method."""
+        if not self.image:
+            raise ValueError("Load an image first using.load_image()")
 
+        # Standard Sepia implementation 
+        img = self.image.convert("RGB")
+        pixels = img.load()
+        width, height = img.size
+
+        for x in range(width):
+            for y in range(height):
+                r, g, b = pixels[x, y]
+                # Formula for Sepia transformation
+                tr = int(0.393 * r + 0.769 * g + 0.189 * b)
+                tg = int(0.349 * r + 0.686 * g + 0.168 * b)
+                tb = int(0.272 * r + 0.534 * g + 0.131 * b)
+                
+                # Ensure values stay within 0-255 
+                pixels[x, y] = (min(tr, 255), min(tg, 255), min(tb, 255))
+        
+        return img
+
+class NegativeAlgorithm(BaseAlgorithm):
+    """You can add other tone algorithms in the same file."""
+    def compute(self):
+        img = self.image.convert("RGB")
+        # Existing negative logic: (255-r, 255-g, 255-b) 
+        return img.point(lambda p: 255 - p)
+    
 def make_sepia(image_path: str, dest_path: str, factor: int):
     image = Image(image_path)
     width, height = image.get_size()
@@ -70,6 +103,11 @@ def main():
 
 
 if __name__ == "__main__":
+    sepia=SepiaAlgorithm()
+    sepia.load_image(r'C:\office\imgprocalgs\tests\data\desert.jpg')
+    output_image = sepia.compute()
+    os.makedirs(os.path.dirname('data/desert_sepia_algorithm.jpg'), exist_ok=True)
+    output_image.save('data/desert_sepia_algorithm.jpg')
     app = App()
     example(app)
     app.run_server("127.0.0.1", 8001, open_webiste=True)
